@@ -15,6 +15,8 @@
 
 var ws = new WebSocket('ws://139.59.4.43:8443/camera');
 var webRtcPeer;
+var remoteIceCandidates = [];
+var sdpAnswerReceived = false;
 ws.onmessage = function(message) {
   var parsedMessage = JSON.parse(message.data);
   //console.info('Received message: ' + message.data);
@@ -26,11 +28,21 @@ ws.onmessage = function(message) {
     
     case 'iceCandidate':
       console.log("Setting remote icecandidate " + JSON.stringify(parsedMessage.candidate));
-      webRtcPeer.addIceCandidate(parsedMessage.candidate)
+      if(sdpAnswerReceived == true){
+        webRtcPeer.addIceCandidate(parsedMessage.candidate)
+      }else{
+        remoteIceCandidates.push(parsedMessage.candidate);
+      }
+
       break;
     case 'sdpAnswer':
       console.log("Setting sdp answer " + JSON.stringify(parsedMessage.sdpAnswer));
       webRtcPeer.processAnswer(parsedMessage.sdpAnswer);
+      sdpAnswerReceived = true;
+      console.log("Pushing received remote ice candidates to WebRtcPeer.");
+      for(var i = 0; i < remoteIceCandidates.length; i++){
+        webRtcPeer.addIceCandidate(remoteIceCandidates[i]);
+      }
       break;
     default:
       onError('Unrecognized message', parsedMessage);
@@ -42,6 +54,7 @@ window.addEventListener('load', function(){
 	var videoOutput = document.getElementById('videoOutput');
 	var address = document.getElementById('address');
 	address.value = 'rtsp://admin:admin_123@192.168.2.183:554/Streaming/Channels/102?transportmode=unicast&profile=Profile_1';
+  //address.value = 'http://www.w3schools.com/TAGS/movie.mp4';
   var pipeline;
   
 
@@ -151,7 +164,7 @@ function register() {
 
 function sendMessage(message) {
   var jsonMessage = JSON.stringify(message);
-  console.log('Senging message: ' + jsonMessage);
+  console.log('Sending message: ' + jsonMessage);
   ws.send(jsonMessage);
 }
 
