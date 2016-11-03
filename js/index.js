@@ -78,7 +78,8 @@ window.addEventListener('load', function(){
              { "url": "turn:139.59.4.43:3478",
                "username": "kurento",
                "credential": "kurento"
-             }
+             },
+             { "url": "stun:139.59.4.43:3478" }
            ]
       }
     };
